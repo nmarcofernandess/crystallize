@@ -55,9 +55,10 @@ Git and keep this repository as the source.
 
 ## Install
 
-Version `0.3.1` is the minimum supported release. Version `0.3.0` contained an
-unsupported Claude manifest field and could not be installed by current Claude
-Code.
+Version `0.3.2` is the minimum supported release for cross-host installs.
+Version `0.3.0` contained an unsupported Claude manifest field and could not be
+installed by current Claude Code. Version `0.3.1` repaired the native manifests;
+`0.3.2` also makes every portable skill self-contained.
 
 ### Prerequisites
 
@@ -148,7 +149,7 @@ Restart the host, or start a new session/thread, after updating.
 ### Troubleshooting
 
 - `Unrecognized key: "displayName"`: refresh the marketplace and confirm that
-  `0.3.1` or newer is installed.
+  `0.3.2` or newer is installed.
 - `No module named yaml`: install PyYAML with the same Python interpreter the
   agent runs.
 - Plugin installed but skills are absent: restart Claude/Codex; in Gemini run

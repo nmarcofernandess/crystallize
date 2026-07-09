@@ -12,7 +12,7 @@
       "name": "crystallize",
       "source": "./plugins/crystallize",
       "description": "Builds a .context graph (domains, patterns, component index, decision trees) from your own code; detects semantic duplicate clusters; persists curated judgment only after referee-verification and human approval; enforces anti-fork via /crystallize-guard.",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "author": {
         "name": "Marco Antonio",
         "url": "https://github.com/nmarcofernandess"
