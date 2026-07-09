@@ -1,28 +1,25 @@
 ---
-description: Read-only report on a crystallize run — phases completed and when, staleness, approval gate state, and pattern status. Suggests the next command.
-argument-hint: [area]
+description: Read-only report on a crystallize run — phase freshness, graph tiers, approval gate, pending clusters, and the next step. Never writes anything.
+argument-hint: [scope]
 ---
 
-`area` (optional): same `area-slug` resolution as `/crystallize`; defaults
-to `whole-repo`.
+Read `.context/status.json`. If absent: "No crystallize run found. Run
+/crystallize [scope] to start." Otherwise report, strictly read-only:
 
-Read `analysis/crystallize/<area-slug>/STATUS.json`. If it doesn't exist,
-report: "No crystallize run found for this area. Run /crystallize
-[area] to start."
-
-Otherwise report, read-only (never write anything in this command):
-
-1. **Phases:** for `map`, `mine`, `diff` — last run timestamp, and
-   whether it's currently stale (recompute file hashes the same way
-   `/crystallize` does, compare against stored `fileHashes`, without
-   updating the stored values).
-2. **Gate:** current value (`pending`/`approved`/`partially_applied`),
-   and whether `CRYSTALLIZE_BRIEF.md` exists and is fresh relative to the
-   three phase files.
-3. **Patterns:** a table — `pattern-id | status | impact` — grouped by
-   status, most-impactful pending pattern first.
-4. **Next step:** `STATUS.json.nextSuggestedCommand` if set, otherwise
-   derive one: if any phase is stale or missing → `/crystallize [area]`;
-   if the gate is `pending` and the brief exists → "review and approve
-   CRYSTALLIZE_BRIEF.md"; if patterns are approved but not applied →
-   `/crystallize-apply <highest-impact pending pattern-id> [area]`.
+1. **Phases** — for `map`, `mine`, `diff`: last run, and whether stale now
+   (recompute `fileHashes` the way `/crystallize` does, compare, do NOT write the
+   recomputed values back).
+2. **Graph tiers** — does `.context/index/components.generated.yaml` exist and what
+   is its `generated_at`? How many curated nodes exist (patterns, trees, curated
+   index entries)? Flag any node marked `status: draft`/`proposed` as
+   lower-confidence.
+3. **Gate** — `pending`/`approved`/`partially_applied`, and whether
+   `.context/_crystallize/CRYSTALLIZE_BRIEF.md` exists and is fresh relative to the
+   three phase inputs.
+4. **Clusters** — a table `cluster-id | mechanism | mass | status`, grouped by
+   status, highest-mass pending first.
+5. **Next step** — `status.json.nextSuggestedCommand` if set, else derive:
+   - any phase stale/missing → `/crystallize [scope]`
+   - gate `pending` and brief exists → "review and approve CRYSTALLIZE_BRIEF.md"
+   - clusters approved but not applied → `/crystallize-apply <highest-mass pending id> [scope]`
+   - graph stale vs code → `/crystallize [scope]` to refresh before trusting the guard

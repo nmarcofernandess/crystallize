@@ -1,8 +1,8 @@
 {
   "name": "crystallize",
   "displayName": "Crystallize",
-  "version": "0.1.0",
-  "description": "Consolidate a stable, self-authored prototype into canonical, reusable architecture. Maps what exists, mines business and UI intent, detects semantic duplication across components, and synthesizes an approved consolidation brief before touching any code. Single entry point (/crystallize), state tracked in STATUS.json, applied one pattern at a time via /crystallize-apply.",
+  "version": "0.2.0",
+  "description": "Build a durable .context knowledge graph from a stable, self-authored codebase — domains, patterns, component index, and decision trees that make reuse the default and forking a justified exception. Maps a Tier-1 skeleton by grep/glob, mines intent, detects semantic duplicate clusters, and only persists curated judgment after a referee verifies it against the code and a human approves it. /crystallize builds it, /crystallize-guard enforces anti-fork day to day, /crystallize-apply consolidates one cluster with a behavior gate.",
   "author": {
     "name": "Marco Antonio",
     "url": "https://github.com/nmarcofernandess"
@@ -10,10 +10,12 @@
   "repository": "https://github.com/nmarcofernandess/crystallize",
   "license": "MIT",
   "keywords": [
-    "agent-skills",
+    "context-graph",
     "refactoring",
     "consolidation",
     "duplication-detection",
+    "anti-fork",
+    "reuse",
     "architecture",
     "prototype-to-production"
   ]

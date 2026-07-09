@@ -1,91 +1,114 @@
 ---
-description: Consolidate a stable prototype into canonical architecture — maps the area, mines business and UI intent, detects semantic duplication, and synthesizes a consolidation brief for human approval. Single entry point; never call map/mine/diff separately.
-argument-hint: [area]
+description: Build or refresh the .context knowledge graph for a scope, detect duplicate clusters, and synthesize a consolidation brief for human approval. Single entry point; classifies scope and runs the smallest honest pass. Never rewrites code.
+argument-hint: [scope]
 ---
 
-`area` (optional): a path within the current project to scope this run.
-If omitted, scope is the whole repo (slug: `whole-repo`).
+`scope` (optional) decides the size of the run. Classify it:
 
-Compute `area-slug` from `$1` (or `whole-repo`): lowercase, replace `/`
-and spaces with `-`. All artifacts for this run live in
-`analysis/crystallize/<area-slug>/`.
+- **specific** — a pattern family name (`modais`, `cards`, `filters`): build/refresh
+  only that `patterns/<x>.yaml` (+ its tree, if earned) and flag its forks.
+- **domain** — a domain path or name (`src/despesas`, `despesas`): one
+  `domains/<x>.yaml` plus the patterns that domain uses.
+- **whole** — no argument: the full graph, with duplicate detection looping until
+  it runs dry.
 
-## Step 0: Load or initialize STATUS.json
+Everything lives under `.context/` at the repo root (create it if absent). Process
+bookkeeping lives at `.context/status.json` and `.context/_crystallize/`; the graph
+files (`domains/`, `patterns/`, `trees/`, `index/`, `manifest.yaml`, `onboarding.yaml`)
+stay pristine for day-to-day agents.
 
-Read `analysis/crystallize/<area-slug>/STATUS.json` if it exists — schema:
+## Step 0 — load or init status.json
+
+Read `.context/status.json` (schema below). Create it with defaults if absent.
 
 ```json
 {
-  "area": "<area-slug>",
+  "scope": "<specific|domain|whole>:<name or whole-repo>",
   "phases": {
-    "map": { "lastRun": null, "fileHashes": {} },
+    "map":  { "lastRun": null, "fileHashes": {} },
     "mine": { "lastRun": null, "fileHashes": {} },
     "diff": { "lastRun": null, "fileHashes": {} }
   },
   "gate": "pending",
-  "patterns": [],
+  "clusters": [],
   "nextSuggestedCommand": null
 }
 ```
 
-If it doesn't exist, create it with the above defaults (all `lastRun`
-null, empty `fileHashes`, empty `patterns`).
+**Staleness:** for each phase already run, recompute `shasum -a 256` for its
+`fileHashes` and compare. Any mismatch, or new in-scope files absent from `map`'s
+hashes, makes that phase and every later phase stale — they must re-run.
 
-**Staleness check:** for each phase already run, recompute
-`shasum -a 256` for every file listed in its `fileHashes` and compare. If
-any differ, or if new files exist in the target area that aren't in
-`map`'s `fileHashes`, that phase (and every phase after it) is stale and
-must re-run.
+## Step 1 — map (Tier-1 skeleton; if missing or stale)
 
-## Step 1: map phase (if missing or stale)
+Invoke `context-mapper` for the scope. Pass it the current timestamp for
+`generated_at` (never let it invent one). Write:
+- `.context/index/components.generated.yaml` (its GENERATED_INDEX)
+- the SYSTEM_MAP_SKELETON into `.context/manifest.yaml#system_map`
 
-Invoke the `inventory-mapper` agent, scoped to `area` (or the whole repo).
-Write its output to `analysis/crystallize/<area-slug>/INVENTORY.md`.
-Update `STATUS.json`: `phases.map.lastRun` = now, `phases.map.fileHashes`
-= hash of every file the agent cited.
+Update `status.json` `phases.map`.
 
-## Step 2: mine phase (if missing or stale, or map just re-ran)
+## Step 2 — mine (intent; if missing or stale, or map re-ran)
 
-Invoke the `intent-extractor` agent, passing it `INVENTORY.md`. Split its
-returned output into `analysis/crystallize/<area-slug>/BUSINESS_INTENT.md`
-and `.../UI_INTENT.md`. Update `STATUS.json` phases.mine the same way as
-Step 1.
+Invoke `intent-extractor` for the scope, passing it the generated index as a map
+of where to look. Keep its BUSINESS_INTENT and UI_INTENT as working input under
+`.context/_crystallize/` — this is proposal material, not yet graph.
 
-## Step 3: diff phase (if missing or stale, or mine just re-ran)
+Update `status.json` `phases.mine`.
 
-Invoke the `pattern-detector` agent, passing it `INVENTORY.md`,
-`BUSINESS_INTENT.md`, and `UI_INTENT.md`. Write its output to
-`analysis/crystallize/<area-slug>/VARIATIONS.md`. Parse every `#### Pattern:
-<pattern-id>` block into `STATUS.json.patterns` as
-`{ id, description: <Intent line>, impact: <parsed N from Impact line>, status: "pending" }`,
-preserving any existing entry's `status` if that `pattern-id` was already
-present (don't reset an `applied` pattern back to `pending` on a re-run).
-Update `phases.diff` the same way.
+## Step 3 — diff (duplicate clusters; if missing or stale, or mine re-ran)
 
-## Step 4: only when map, mine, and diff are ALL fresh — synthesize the brief
+Invoke `duplicate-detector`, passing the generated index + both intent tracks.
+Write its VARIATIONS to `.context/_crystallize/VARIATIONS.md`. Parse each
+`#### Cluster: <cluster-id>` into `status.json.clusters` as
+`{ id, intent, mechanism, mass, risk, status: "pending" }`, preserving the
+`status` of any cluster-id already present (never reset an `applied` cluster).
 
-If any phase above just ran due to staleness, stop here and report what
-was refreshed; do not synthesize a new brief in the same invocation
-against a partially-stale state — re-run `/crystallize` once more to
-confirm nothing changed, then proceed. (In practice: if Steps 1–3 made no
-changes because everything was already fresh, continue immediately.)
+For a **whole** scope, loop map→mine→diff until two consecutive diff rounds add no
+new cluster (loop-until-dry). For **specific**/**domain**, one pass is enough.
 
-Invoke the `canonical-architect` agent, passing it `INVENTORY.md` and
-`VARIATIONS.md`. Write its output as
-`analysis/crystallize/<area-slug>/CRYSTALLIZE_BRIEF.md`.
+Update `status.json` `phases.diff`.
 
-Set `STATUS.json.gate` = `"pending"` if it was previously unset, or leave
-as-is if already `"approved"`/`"partially_applied"` (a brief regenerated
-after new variations doesn't silently re-approve itself — flag this to
-the user explicitly if `gate` was already `"approved"`).
+## Step 4 — referee (make Tier-2 true)
 
-Set `nextSuggestedCommand` to `"review CRYSTALLIZE_BRIEF.md and approve"`.
+Before anything curated is proposed, verify. For each cluster and each candidate
+canonical claim (its `extends`/base, its consumer counts, its "these instances
+are equivalent"), invoke `claim-referee` — one claim per referee. Drop or correct
+every claim the referee refutes/corrects. Only verified claims proceed.
 
-## Step 5: present and stop
+## Step 5 — synthesize the brief (only when map, mine, diff are all fresh)
 
-Present a summary of the brief (taxonomy, top patterns by impact, phase
-count). **Enter plan mode if the session supports it, and stop — write
-nothing further until the user explicitly approves.** Approving here
-means the user will tell you which `pattern-id`s move to `"approved"` in
-`STATUS.json` (do that update once they confirm) — only then can
-`/crystallize-apply` run against them.
+If any phase just re-ran due to staleness, stop and report what refreshed; re-run
+`/crystallize` once to confirm nothing changed, then continue. (If Steps 1–3
+changed nothing, continue immediately.)
+
+Invoke `context-architect` with the verified clusters + intent. Write its
+PROPOSED_* blocks into `.context/_crystallize/CRYSTALLIZE_BRIEF.md` (not yet into
+the live graph). The brief is: the proposed patterns/trees/index/domains, the
+over-engineering self-review, and the open questions.
+
+Set `gate` to `"pending"` (or leave `"approved"`/`"partially_applied"` as-is; if it
+was already `"approved"` and new clusters appeared, flag that to the user — a
+regenerated brief does not silently re-approve). Set `nextSuggestedCommand` to
+`"review .context/_crystallize/CRYSTALLIZE_BRIEF.md and approve"`.
+
+## Step 6 — present and stop
+
+Summarize the brief: scope, top clusters by mass, which pattern families earned a
+decision tree and which didn't, open questions. **Enter plan mode if supported and
+stop — write nothing into the live graph until the user approves.** Approving means
+the user names which clusters/nodes are accepted; on their confirmation, promote
+the approved Tier-2 blocks from the brief into `.context/` (patterns, trees,
+curated index, domains, manifest registry) and mark those clusters `"approved"` in
+`status.json`. Only then can `/crystallize-apply` run.
+
+After promoting anything into the live graph, run the validator and report its
+result — a promoted node that points at a file which doesn't exist is a lie the
+graph must not keep:
+
+```
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate-context.py" --context .context --repo .
+```
+
+If it reports errors (dangling paths, unresolved references), fix them before
+declaring the run done — do not leave the graph in a failing state.

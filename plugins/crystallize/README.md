@@ -1,14 +1,20 @@
 # crystallize
 
-Point this at a stable, self-authored prototype and get back: a structural
-map, the business and UI intent mined from the code, the semantic
-duplication that accumulated during iteration, and an approved
-consolidation brief — then apply it one pattern at a time with an
-equivalence test proving nothing drifted.
+Point this at a stable, self-authored codebase and it builds a durable
+`.context` knowledge graph — the domains, patterns, component index, and
+decision trees that make reuse the default and forking a loud, justified
+exception. That graph then serves two masters: day-to-day feature work (an
+agent reads it before building, so it reuses instead of duplicating) and the
+plugin's own consolidation (it finds duplication by asking the graph "does this
+already exist?").
 
-Unlike `code-modernization`, the source here is **trusted** (your own
-recent code) and the target is the **same stack** — this isn't a rewrite,
-it's canonicalization: same intent, fewer variations, one name per concept.
+Unlike `code-modernization`, the source here is **trusted** (your own recent
+code) and the target is the **same stack** — this isn't a rewrite, it's
+canonicalization: same intent, fewer variations, one name per concept. Deletion
+is an *effect* of generalizing and reusing, never a goal of fewer lines.
+
+Full rationale in [`../../DESIGN.md`](../../DESIGN.md); the graph format in
+[`CONTEXT_SCHEMA.md`](CONTEXT_SCHEMA.md).
 
 ## Install
 
@@ -20,40 +26,62 @@ it's canonicalization: same intent, fewer variations, one name per concept.
 ## Usage
 
 ```
-/crystallize                       # whole repo
-/crystallize src/apresentacao      # scoped to one area
+/crystallize                 # whole repo — full graph, duplicate detection until dry
+/crystallize modais          # specific — one pattern family
+/crystallize despesas        # domain — one domain + its patterns
 ```
 
-Runs map → mine → diff internally, writes artifacts to
-`analysis/crystallize/<area>/`, and stops at a plan-mode approval gate
-once `CRYSTALLIZE_BRIEF.md` is ready. Review it, then approve the
-patterns you want applied (mark them `"approved"` in `STATUS.json`, or
-say so and have the session do it).
+Runs map → mine → diff → referee internally, writes the graph to `.context/`,
+and stops at a plan-mode approval gate once the brief is ready. Nothing curated
+enters the graph until a referee verified it against the code AND you approved
+it.
 
 ```
-/crystallize-apply <pattern-id>    # apply one approved pattern
-/crystallize-status                # read-only progress report
+/crystallize-apply <cluster-id>   # consolidate one approved cluster + prove no drift
+/crystallize-guard "a modal for X" # anti-fork check: does a canonical form exist?
+/crystallize-status               # read-only: freshness, tiers, gate, clusters
 ```
 
-## Artifacts
+## The two tiers
 
-All under `analysis/crystallize/<area-slug>/`:
+The graph keeps generated facts and human judgment in separate files, so trust
+is legible:
 
-- `INVENTORY.md` — entry points, components, domain modules, component graph
-- `BUSINESS_INTENT.md` / `UI_INTENT.md` — extracted rules and UI intent
-- `VARIATIONS.md` — detected semantic duplication, ranked by impact
-- `CRYSTALLIZE_BRIEF.md` — taxonomy, glossary, phased plan (the approval gate)
-- `CONSOLIDATION_NOTES.md` — what `/crystallize-apply` actually changed, per pattern
-- `STATUS.json` — machine state: phase freshness, gate, pattern statuses
+- **Tier 1 — generated.** `index/components.generated.yaml` (`generated_at`),
+  `system_map` skeleton, candidate clusters. A grep/glob walk; safe to refresh.
+- **Tier 2 — verified + curated.** `patterns/*`, `trees/need-*`, curated
+  `index/components.yaml`, `domains/*`. Enters only after referee-verification +
+  human approval. **The guard reads Tier 2 only.**
+
+## Layout
+
+```
+.context/
+  onboarding.yaml · manifest.yaml
+  domains/<area>.yaml · patterns/<name>.yaml · trees/need-<goal>.yaml
+  index/components.yaml · index/components.generated.yaml
+  status.json · _crystallize/{VARIATIONS,CRYSTALLIZE_BRIEF,CONSOLIDATION_NOTES}.md
+```
 
 ## Agents
 
-- `inventory-mapper` — structural map (map phase)
-- `intent-extractor` — business + UI intent (mine phase)
-- `pattern-detector` — semantic duplication detection (diff phase)
-- `canonical-architect` — target taxonomy + glossary + phased plan, with a
-  built-in adversarial pass against over-engineering (brief synthesis)
-- `consolidator` — applies one approved pattern (`/crystallize-apply`)
+- `context-mapper` — Tier-1 skeleton (generated index + system_map), grep/glob, language-agnostic
+- `intent-extractor` — business + UI intent from the code as informal spec
+- `duplicate-detector` — semantic duplicate clusters; names the canonical destination
+- `claim-referee` — re-derives each claim against the cited code (makes Tier-2 true)
+- `context-architect` — synthesizes the curated graph, with an anti-over-engineering self-review
+- `consolidator` — applies one cluster via Reuse/Altitude, behavior gate + removed-behavior audit
+
+## Validate the graph
+
+```
+python3 scripts/validate-context.py --context .context --repo .
+```
+
+Checks every graph file parses, the generated index carries `generated_at`,
+every `path:` points to a file that really exists (the anti-lie check), internal
+cross-references resolve, and reports `draft`/`proposed` nodes as
+lower-confidence.
 
 ## License
 

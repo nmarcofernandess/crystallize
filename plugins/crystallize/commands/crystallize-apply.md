@@ -1,52 +1,51 @@
 ---
-description: Apply ONE approved pattern from a crystallize brief — extracts the canonical shape, migrates its instances, and proves equivalence with a test. Refuses to run against a pattern that isn't approved.
-argument-hint: <pattern-id> [area]
+description: Apply ONE approved duplicate cluster from the crystallize brief — collapse its instances into the canonical form, prove behavior didn't drift against the repo's own harness, and update the .context graph. Refuses clusters that aren't approved.
+argument-hint: <cluster-id> [scope]
 ---
 
-`pattern-id`: required, must match an entry in `STATUS.json.patterns`.
-`area` (optional): same `area-slug` resolution as `/crystallize`; defaults
-to `whole-repo` if omitted.
+`cluster-id`: required, must match an entry in `.context/status.json.clusters`.
+`scope` (optional): same classification as `/crystallize`; used only to resolve
+which `.context` you're in (a repo has one `.context/` at root, so this is almost
+always inferable).
 
-## Step 1: Load state and validate
+## Step 1 — load and validate
 
-Read `analysis/crystallize/<area-slug>/STATUS.json`. If it doesn't exist,
-stop: "No crystallize run found for this area — run /crystallize first."
-
-Find `$1` in `STATUS.json.patterns`. If missing, stop and list the known
-`pattern-id`s. If found but `status` is not `"approved"`, stop:
+Read `.context/status.json`. If absent: "No crystallize run found — run
+/crystallize first." Find `$1` in `clusters`. If missing, stop and list the known
+cluster-ids. If its `status` is not `"approved"`, stop:
 
 ```
-Pattern "<pattern-id>" is "<status>", not approved. /crystallize-apply
-only runs against patterns the human approved in CRYSTALLIZE_BRIEF.md —
-mark it approved in STATUS.json (or re-run /crystallize and approve it
-through the plan-mode gate) before applying.
+Cluster "<id>" is "<status>", not approved. /crystallize-apply only runs against
+clusters the human approved in CRYSTALLIZE_BRIEF.md. Approve it (re-run
+/crystallize and approve through the gate) before applying.
 ```
 
-## Step 2: Gather the pattern's context
+## Step 2 — gather context
 
-From `VARIATIONS.md`, extract the full `#### Pattern: <pattern-id>` block
-(intent, instances, suggested canonical shape). From
-`CRYSTALLIZE_BRIEF.md`, extract the taxonomy row and glossary terms that
-reference this `pattern-id`.
+From `.context/_crystallize/VARIATIONS.md`, extract the full `#### Cluster: <id>`
+block (intent, mechanism, instances, canonical destination, behavior-preservation
+risk). From `.context/_crystallize/CRYSTALLIZE_BRIEF.md` and the live graph,
+extract the canonical form's pattern entry and the glossary name it must use.
 
-## Step 3: Apply
+## Step 3 — apply
 
-Invoke the `consolidator` agent with exactly that context — the pattern's
-instance list, its canonical-shape suggestion, and its glossary terms.
-Nothing else.
+Invoke `consolidator` with exactly that context — the cluster's instance list, its
+mechanism (Reuse or Altitude), its canonical destination, its glossary name.
+Nothing else. The consolidator runs the behavior gate (the repo's own tests/
+typecheck) and the removed-behavior audit itself.
 
-## Step 4: Record the result
+## Step 4 — record
 
-Append the agent's returned summary to
-`analysis/crystallize/<area-slug>/CONSOLIDATION_NOTES.md` under a
-timestamped heading. Update `STATUS.json`: this pattern's `status` →
-`"applied"`. If this was the last `"approved"` pattern, set
-`STATUS.json.gate` = `"partially_applied"` only if some patterns from the
-brief remain `"pending"`/not-yet-approved, or leave `gate` as-is if every
-pattern reached a terminal state (`"applied"`/`"discarded"`).
+Append the consolidator's summary to `.context/_crystallize/CONSOLIDATION_NOTES.md`
+under a timestamped heading. Set this cluster's `status` → `"applied"`. Set `gate`
+→ `"partially_applied"` while any cluster remains not-yet-terminal; leave it as-is
+once every cluster is `"applied"`/`"discarded"`. Confirm the consolidator's graph
+updates landed in `.context/` (pattern `extends`/`consumers`, curated index).
 
-## Step 5: Report
+## Step 5 — report
 
-Show the consolidator's summary to the user, including any "Deviations
-found" it reported — those need a human decision, not a silent merge into
-the canonical shape.
+Show the consolidator's summary, and surface loudly:
+- the **behavior proof** (exact command + result) — if it didn't pass, the cluster
+  is NOT done; leave it `"approved"` and report the failure honestly.
+- any **deviations / suspected bugs** it preserved — those need a human decision,
+  not a silent merge.
