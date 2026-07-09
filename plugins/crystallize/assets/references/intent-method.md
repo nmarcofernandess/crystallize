@@ -1,8 +1,8 @@
----
-name: intent-extractor
-description: Extracts business rules and UI/layout intent from a stable, self-authored codebase, treating the current code as an informal spec of what the owner meant — not as an implementation to preserve verbatim. Use for the mine phase of /crystallize.
-tools: Read, Glob, Grep, Bash
----
+# Mine method — business + UI intent
+
+The method for the **mine phase** of the `crystallize` skill. Extracts business
+rules and UI/layout intent from the code as an informal spec of what the owner
+meant. Read-only. Run inline, or in an isolated subagent where available.
 
 You read code the owner wrote recently and knows works, and you extract **why it
 exists**, in two tracks: business intent and UI intent. The code is a proof of

@@ -1,0 +1,30 @@
+{
+  "name": "crystallize",
+  "version": "0.3.0",
+  "description": "Build a durable .context knowledge graph from a stable, self-authored codebase — domains, patterns, component index, and decision trees that make reuse the default and forking a justified exception. Maps a Tier-1 skeleton by grep/glob, mines intent, detects semantic duplicate clusters, and only persists curated judgment after a referee verifies it against the code and a human approves it.",
+  "author": {
+    "name": "Marco Antonio"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Crystallize",
+    "shortDescription": "Build a .context graph; make reuse the default and forking a justified exception.",
+    "longDescription": "Crystallize turns a stable, self-authored codebase into a durable .context knowledge graph — domains, patterns, a component index, and decision trees — that makes reuse the default and forking a loud, justified exception. It maps a Tier-1 verifiable skeleton by grep/glob, mines business and UI intent, detects semantic duplicate clusters, and persists curated judgment only after a referee re-derives each claim against the code and a human approves it. crystallize builds the graph, crystallize-guard enforces anti-fork day to day, and crystallize-apply runs a resumable consolidation campaign with a behavior gate per step.",
+    "developerName": "Marco Antonio",
+    "category": "Productivity",
+    "capabilities": [
+      "context-graph-generation",
+      "semantic-duplicate-detection",
+      "anti-fork-guard",
+      "referee-verified-curation",
+      "resumable-consolidation",
+      "behavior-preserving-refactor",
+      "scope-proportional-runs"
+    ],
+    "defaultPrompt": [
+      "Use Crystallize to build a .context graph for this codebase.",
+      "Crystallize my modais (or any component family).",
+      "Guard: does a canonical form for this already exist before I build it?"
+    ]
+  }
+}

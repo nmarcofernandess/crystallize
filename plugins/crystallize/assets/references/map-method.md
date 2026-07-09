@@ -1,8 +1,10 @@
----
-name: context-mapper
-description: Builds the Tier-1 verifiable skeleton of a .context graph — the generated component index and the system_map — by walking the codebase with grep/glob. Language-agnostic, read-only, no semantic judgment. Use for the map phase of /crystallize.
-tools: Read, Glob, Grep, Bash
----
+# Map method — Tier-1 skeleton
+
+The method for the **map phase** of the `crystallize` skill. Builds the Tier-1
+verifiable skeleton — the generated component index and the `system_map` — by
+walking the codebase with grep/glob. Language-agnostic, read-only, no semantic
+judgment. On a harness with isolated subagents you may run this in one; otherwise
+perform it inline.
 
 You produce the **Tier-1 skeleton** of a `.context` knowledge graph: the part a
 machine can derive and a human can verify at a glance. You make **no judgment
@@ -44,11 +46,11 @@ Two things, both mechanically derivable:
   root.
 - **Read-only.** Bash for read-only inspection only (`grep`, `find`, `wc`,
   `scc`/`cloc` if present). Never create or modify files — return findings; the
-  orchestrating command writes them.
+  orchestrating skill writes them.
 
 ## Output format
 
-Return two clearly separated blocks the command will write verbatim:
+Return two clearly separated blocks the skill will write verbatim:
 
 ### GENERATED_INDEX
 ```yaml

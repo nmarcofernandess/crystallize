@@ -18,9 +18,18 @@ Full rationale in [`../../DESIGN.md`](../../DESIGN.md); the graph format in
 
 ## Install
 
+Claude Code:
+
 ```
 /plugin marketplace add nmarcofernandess/crystallize
 /plugin install crystallize@crystallize
+```
+
+Codex:
+
+```
+codex plugin marketplace add nmarcofernandess/crystallize --ref main
+codex plugin add crystallize@crystallize
 ```
 
 ## Usage
@@ -63,14 +72,19 @@ is legible:
   status.json · _crystallize/{VARIATIONS,CRYSTALLIZE_BRIEF,CONSOLIDATION_NOTES}.md
 ```
 
-## Agents
+## Skills and phase methods
 
-- `context-mapper` — Tier-1 skeleton (generated index + system_map), grep/glob, language-agnostic
-- `intent-extractor` — business + UI intent from the code as informal spec
-- `duplicate-detector` — semantic duplicate clusters (catalog → categorize → per-category detect); names the canonical destination. Composes `superpowers-lab:finding-duplicate-functions` as an optional TS/JS accelerator
-- `claim-referee` — re-derives each claim against the cited code (makes Tier-2 true)
-- `context-architect` — synthesizes the curated graph, with an anti-over-engineering self-review
-- `consolidator` — executes one plan step (build canonical / migrate one instance) via Reuse/Altitude, behavior gate + removed-behavior audit, structured outcome for the log
+Four skills (`skills/<name>/SKILL.md`) are the portable core: `crystallize`,
+`crystallize-apply`, `crystallize-guard`, `crystallize-status`. The pipeline
+phases are bundled methods under `assets/references/`, read by the skills (run
+inline, or in isolated subagents where the harness has them):
+
+- `map-method` — Tier-1 skeleton (generated index + system_map), grep/glob, language-agnostic
+- `intent-method` — business + UI intent from the code as informal spec
+- `duplicate-method` — semantic duplicate clusters (catalog → categorize → per-category detect); names the canonical destination. Composes `superpowers-lab:finding-duplicate-functions` as an optional TS/JS accelerator
+- `referee-method` — re-derives each claim against the cited code (makes Tier-2 true; strongest in an isolated subagent)
+- `synthesis-method` — curates the graph, with an anti-over-engineering self-review
+- `consolidator-method` — executes one plan step (build canonical / migrate one instance) via Reuse/Altitude, behavior gate + removed-behavior audit, structured outcome for the log
 
 ## Validate the graph
 

@@ -1,20 +1,25 @@
 ---
-description: Run the consolidation campaign — apply approved duplicate clusters one step at a time, durably and resumably. Each cluster has its own plan + append-only log so a fresh agent can pick up mid-campaign without losing its place or redoing work.
-argument-hint: [cluster-id]
+name: crystallize-apply
+description: Run the consolidation campaign — apply approved duplicate clusters one step at a time, durably and resumably. Each cluster has its own plan + append-only log so a fresh agent can pick up mid-campaign without losing its place or redoing work. Use to apply, consolidate, or continue a crystallize campaign.
 ---
 
 This is the big, slow phase. Treat it as a **resumable campaign**, never a
 one-shot: the work outlasts a context window, so state on disk — not memory — is
-the source of truth. Do the smallest durable unit, record it, then the next.
+the source of truth. Do the smallest durable unit, record it, then the next. The
+per-step worker method is in `../../assets/references/consolidator-method.md`; on a
+harness with isolated subagents you may run each step in one, otherwise inline.
+
+The argument is an optional `cluster-id`.
 
 ## Step 1 — resolve which cluster to work
 
 Read `.context/status.json`. If absent: "No crystallize run found — run
 /crystallize first." Then pick the cluster:
 
-- `$1` given → that cluster. If its `status` is not `approved`/`in_progress`/`blocked`,
-  stop: only clusters the human approved can be applied.
-- `$1` empty → resume the campaign: the `execution.active` cluster if one is
+- **cluster-id given** → that cluster. If its `status` is not
+  `approved`/`in_progress`/`blocked`, stop: only clusters the human approved can be
+  applied.
+- **no argument** → resume the campaign: the `execution.active` cluster if one is
   `in_progress`; else the highest-mass `approved` cluster. If none, report the
   campaign is done (or nothing is approved yet) and stop.
 
@@ -52,10 +57,10 @@ finished — do not rebuild the canonical, do not re-migrate a migrated instance
 
 For each step from the resume point onward:
 
-1. Invoke `consolidator` for **that one step only** — pass the step's kind, its
-   `ref` (for migrate), the canonical form + glossary name, and the
-   `verification.command`. The consolidator does exactly that unit, runs the
-   behavior gate, and returns a structured outcome.
+1. Run the **consolidator method** (`../../assets/references/consolidator-method.md`)
+   for **that one step only** — pass the step's kind, its `ref` (for migrate), the
+   canonical form + glossary name, and the `verification.command`. It does exactly
+   that unit, runs the behavior gate, and returns a structured outcome.
 2. **Append one line** to `log.jsonl`: `{ step_id, outcome: "done|blocked|failed",
    proof: "<command> → <result>", removed_behavior_audit, deviations }`. Append
    only — never rewrite prior lines.
@@ -72,11 +77,13 @@ For each step from the resume point onward:
 When every plan step is `done`: cluster `status` → `applied`; append the
 consolidator's cluster summary to `.context/_crystallize/CONSOLIDATION_NOTES.md`;
 confirm the graph updates landed (pattern `extends`/`consumers`, curated index);
-set `execution.active` → the next `approved` cluster (or null). Run the graph
-validator and report:
+set `execution.active` → the next `approved` cluster (or null). Run the bundled
+graph validator (`scripts/validate-context.py` under this plugin's root — Claude
+Code: `${CLAUDE_PLUGIN_ROOT}`; other harnesses via their plugin-root variable) and
+report:
 
 ```
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate-context.py" --context .context --repo .
+python3 "<plugin-root>/scripts/validate-context.py" --context .context --repo .
 ```
 
 ## Step 6 — report

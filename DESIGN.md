@@ -85,10 +85,13 @@ hand).
 
 ## What we took from Superflow (only this)
 
-Organization, not machinery. A dedicated folder, a map/status file, all
-artifacts co-located, a defined process. No router, no phase-budget enum, no
-classifier script, no skill tree. Crystallize stays its own thing; the two are
-not blended.
+Organization and packaging, not process machinery. From Superflow we take the
+dedicated folder, the map/status file, co-located artifacts, a defined process,
+and the portable **Agent Skills packaging** (a `skills/` core + thin per-harness
+manifest adapters) that lets one plugin install on Claude Code and Codex. We do
+**not** take its routing brain — no router, no phase-budget enum, no classifier
+script. Crystallize keeps its own logic (the `.context` engine, two tiers,
+anti-fork); the two plugins' processes are not blended.
 
 ## Generated `.context/` layout
 
@@ -169,23 +172,39 @@ from `status.json` + the logs alone.
 - `/crystallize-status [scope]` — read-only: freshness, tiers, gate, pending
   clusters, next step.
 
-## Agents
+## Phases (skills + bundled methods)
 
-- `context-mapper` — Tier-1 skeleton (generated index + system_map) via grep/glob,
+The surface is four skills; the pipeline phases are bundled method files
+(`assets/references/`) the skills read. On a harness with isolated subagents a
+phase may run in its own subagent (recommended for the referee, where independence
+is a correctness feature); otherwise it runs inline — same result.
+
+- `map-method` — Tier-1 skeleton (generated index + system_map) via grep/glob,
   language-agnostic, read-only.
-- `intent-extractor` — business rules + UI intent from the code as informal spec.
-- `duplicate-detector` — semantic duplicate clusters; assigns `cluster-id`, names
+- `intent-method` — business rules + UI intent from the code as informal spec.
+- `duplicate-method` — semantic duplicate clusters; assigns `cluster-id`, names
   the canonical destination, ranks by mass-reclaimed-safely. Method: catalog →
   categorize (cheap model) → per-category detect (careful model), with a
   HIGH/MEDIUM/LOW × CONSOLIDATE/INVESTIGATE/KEEP_SEPARATE model and "when in doubt,
   INVESTIGATE". Composes the `superpowers-lab:finding-duplicate-functions` toolbox
   as an optional accelerator on TS/JS (reuse over reinvention — the plugin obeys
   its own thesis); language-agnostic grep/glob otherwise.
-- `claim-referee` — re-derives each proposed canonical claim / `extends` / anti-
+- `referee-method` — re-derives each proposed canonical claim / `extends` / anti-
   pattern against the cited code and confirms or refutes it. The gate that makes
   Tier 2 true.
-- `context-architect` — synthesizes verified clusters into the curated graph
+- `synthesis-method` — synthesizes verified clusters into the curated graph
   (patterns, trees, curated index, domains), with an adversarial over-engineering
   self-review (does this tree branch earn itself, or does a default/name suffice?).
-- `consolidator` — applies one approved cluster via Altitude + Reuse, behavior
-  gate against the repo's own harness, removed-behavior audit, updates the graph.
+- `consolidator-method` — applies one approved plan step via Altitude + Reuse,
+  behavior gate against the repo's own harness, removed-behavior audit, updates the
+  graph.
+
+## Portability
+
+The `skills/` core is [Agent Skills](https://agentskills.io) — portable to any
+harness that reads the format (Claude Code, Codex, and ~40 others). Only the
+`SKILL.md` files and their bundled methods travel; the manifests
+(`.claude-plugin/`, `.codex-plugin/`) and marketplace catalogs are per-harness
+adapters. Subagent dispatch is an optional acceleration where the harness has it,
+never a requirement — the skills are self-sufficient inline. So "works on any AI"
+means, honestly, "works on any Agent Skills harness".

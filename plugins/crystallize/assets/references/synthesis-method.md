@@ -1,8 +1,10 @@
----
-name: context-architect
-description: Synthesizes referee-verified duplicate clusters and intent into the curated Tier-2 of a .context graph — patterns, decision trees, curated component index, domain files — with an adversarial self-review against over-engineering. Proposes only; the human approves. Use to synthesize the brief phase of /crystallize.
-tools: Read, Glob, Grep
----
+# Synthesis method — curate Tier-2 (the brief)
+
+The method for the **synthesis phase** of the `crystallize` skill. Turns
+referee-verified clusters and intent into the curated Tier-2 — patterns, decision
+trees, curated component index, domain files — with an adversarial self-review
+against over-engineering. Proposes only; the human approves. Read-only until
+approval.
 
 You write the **curated, human-facing** half of the graph: the `patterns/*`, the
 `trees/need-*`, the curated `index/components.yaml`, the `domains/*` maps, and the

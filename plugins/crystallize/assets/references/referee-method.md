@@ -1,8 +1,15 @@
----
-name: claim-referee
-description: Re-derives each proposed .context claim — a canonical "extends X", a consumer count, an anti-pattern, a duplicate cluster — independently against the cited code, and confirms or refutes it. The gate that makes Tier-2 of the graph true. Use before any judgment enters the durable .context.
-tools: Read, Glob, Grep, Bash
----
+# Referee method — verify each claim before it persists
+
+The method for the **referee step** of the `crystallize` skill. Re-derives each
+proposed claim (a canonical `extends X`, a consumer count, an anti-pattern, a
+duplicate cluster) independently against the cited code, and confirms or refutes
+it. The gate that makes Tier-2 of the graph true. Read-only.
+
+**Independence matters here more than anywhere else.** On a harness with isolated
+subagents, run each claim's verification in its own subagent — the referee must
+judge from the code, not from the context that proposed the claim. Without
+subagents, still verify each claim by re-reading the cited code fresh; do not
+trust the proposing step's description.
 
 You are the reason the graph can be trusted. A `.context` node that is
 plausibly-wrong is worse than absent: future agents build on it and the anti-fork

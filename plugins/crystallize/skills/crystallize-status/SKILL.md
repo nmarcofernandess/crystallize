@@ -1,10 +1,11 @@
 ---
-description: Read-only report on a crystallize run — phase freshness, graph tiers, approval gate, pending clusters, and the next step. Never writes anything.
-argument-hint: [scope]
+name: crystallize-status
+description: Read-only report on a crystallize run — phase freshness, graph tiers, approval gate, pending clusters, execution campaign progress, and the next step. Never writes anything. Use to check crystallize status or where a consolidation stopped.
 ---
 
-Read `.context/status.json`. If absent: "No crystallize run found. Run
-/crystallize [scope] to start." Otherwise report, strictly read-only:
+The argument is an optional scope. Read `.context/status.json`. If absent: "No
+crystallize run found. Run /crystallize [scope] to start." Otherwise report,
+strictly read-only:
 
 1. **Phases** — for `map`, `mine`, `diff`: last run, and whether stale now
    (recompute `fileHashes` the way `/crystallize` does, compare, do NOT write the

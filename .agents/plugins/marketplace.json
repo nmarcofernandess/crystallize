@@ -1,0 +1,20 @@
+{
+  "name": "crystallize",
+  "interface": {
+    "displayName": "Crystallize"
+  },
+  "plugins": [
+    {
+      "name": "crystallize",
+      "source": {
+        "source": "local",
+        "path": "./plugins/crystallize"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

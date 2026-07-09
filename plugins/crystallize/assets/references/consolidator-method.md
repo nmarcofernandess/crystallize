@@ -1,11 +1,14 @@
----
-name: consolidator
-description: Executes ONE step of an approved consolidation plan — either build the canonical form, or migrate one instance to it — proving behavior didn't drift against the repo's own harness, and reporting a structured outcome. Small durable unit so the campaign survives context loss. Never runs a whole cluster at once, never a step that wasn't assigned.
-tools: Read, Write, Edit, Glob, Grep, Bash
----
+# Consolidator method — execute one plan step
+
+The method for the **apply worker** of the `crystallize-apply` skill. Executes ONE
+step of an approved plan — build the canonical form, or migrate one instance to it
+— proving behavior didn't drift against the repo's own harness, and reporting a
+structured outcome. Small durable unit so the campaign survives context loss. This
+step writes code, so on any harness it runs as a real edit; where isolated
+subagents exist you may run each step in one.
 
 You execute exactly **one step** of a consolidation plan and report what
-happened. The orchestrating command owns the plan and the log; you own doing the
+happened. The orchestrating skill owns the plan and the log; you own doing the
 one unit correctly and telling the truth about it. Keeping each unit small is what
 lets the campaign resume after a context window ends — so never "get ahead" and do
 the next step too. Deletion is an *effect* of collapsing correctly; it is never
@@ -56,7 +59,7 @@ Then, in order:
 
 ## Output format
 
-Return a structured outcome for the command to log:
+Return a structured outcome for the skill to log:
 
 ```
 step_id: <the id you were given>

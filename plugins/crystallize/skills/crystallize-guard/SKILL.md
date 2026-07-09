@@ -1,23 +1,25 @@
 ---
-description: Anti-fork check — before you build something new, ask the .context graph whether a canonical form already exists. Read-only, fast, staleness-aware. The day-to-day workhorse that makes forking a justified exception.
-argument-hint: <what you're about to build>
+name: crystallize-guard
+description: Anti-fork check — before you build something new, ask the .context graph whether a canonical form already exists. Read-only, fast, staleness-aware. The day-to-day workhorse that makes forking a justified exception. Use before creating a component, helper, modal, or pattern to check whether one already exists to reuse.
 ---
 
-`$ARGUMENTS` is a description of what you're about to create — "a modal to pick a
+The argument is a description of what you're about to create — "a modal to pick a
 category", "a helper to validate a money value", "a dashboard for expenses". Your
 job is to answer, from the graph, one question: **does a canonical form for this
 already exist, so you should reuse/extend instead of fork?**
 
-This command is read-only. It never writes to `.context/` or to code.
+This skill is read-only. It never writes to `.context/` or to code.
 
 ## Step 1 — staleness check first
 
 Read `.context/status.json`. Recompute `shasum -a 256` for the relevant phase's
 `fileHashes` (don't update them). For a machine anti-lie/staleness signal, also
-run the validator (read-only) and factor its verdict in:
+run the bundled validator (read-only) — `scripts/validate-context.py` under this
+plugin's root (Claude Code: `${CLAUDE_PLUGIN_ROOT}`; other harnesses via their
+plugin-root variable) — and factor its verdict in:
 
 ```
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate-context.py" --context .context --repo .
+python3 "<plugin-root>/scripts/validate-context.py" --context .context --repo .
 ```
 
 If the graph is stale relative to the code, the validator reports dangling paths,

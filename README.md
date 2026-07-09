@@ -1,7 +1,9 @@
 # Crystallize
 
-Crystallize is a Claude Code plugin that turns a stable, self-authored codebase
-into a durable `.context` knowledge graph — and keeps it that way:
+Crystallize is an Agent Skills plugin — it installs on **Claude Code and Codex**
+(and any harness that reads the [Agent Skills](https://agentskills.io) format) —
+that turns a stable, self-authored codebase into a durable `.context` knowledge
+graph, and keeps it that way:
 
 ```text
 codebase -> map -> mine -> diff -> referee -> brief (human approval) -> apply, one cluster at a time
@@ -25,29 +27,49 @@ This repository is the marketplace root: product repositories consume
 
 ## Repository Shape
 
+The portable core is the `skills/` tree — one `SKILL.md` per capability, read by
+any Agent Skills harness. Everything else is a thin per-harness adapter.
+
 ```text
-.claude-plugin/marketplace.json     # Claude Code marketplace catalog
-DESIGN.md                           # rationale, the five design locks
+.claude-plugin/marketplace.json       # Claude Code marketplace catalog
+.agents/plugins/marketplace.json      # Codex marketplace catalog
+DESIGN.md                             # rationale, the five design locks
 plugins/crystallize/
-  .claude-plugin/plugin.json        # Claude Code plugin manifest
-  CONTEXT_SCHEMA.md                 # the generic .context contract
-  agents/                           # 6 specialist subagents
-  commands/                         # /crystallize, -apply, -guard, -status
-  scripts/validate-context.py       # structural graph validator
-  README.md                         # plugin usage
+  .claude-plugin/plugin.json          # Claude Code plugin manifest
+  .codex-plugin/plugin.json           # Codex plugin manifest
+  skills/                             # ← portable core: crystallize, -apply, -guard, -status
+    <name>/SKILL.md
+  assets/references/                  # phase methods the skills read (map, mine, diff, referee, synthesis, consolidator)
+  scripts/validate-context.py         # structural graph validator
+  CONTEXT_SCHEMA.md                   # the generic .context contract
+  README.md                           # plugin usage
 ```
 
 Do not copy this plugin into product repositories. Install this marketplace from
 Git and keep this repository as the source.
 
-## Install In Claude Code
+## Install
+
+**Claude Code**
 
 ```
 /plugin marketplace add nmarcofernandess/crystallize
 /plugin install crystallize@crystallize
 ```
 
-## Commands
+**Codex**
+
+```
+codex plugin marketplace add nmarcofernandess/crystallize --ref main
+codex plugin add crystallize@crystallize
+```
+
+The four capabilities are invoked as skills (`/crystallize`, `/crystallize-apply`,
+`/crystallize-guard`, `/crystallize-status` — namespaced by the harness). On a
+harness with isolated subagents, the pipeline phases may fan out for stronger
+verification independence; without them they run inline in sequence — same result.
+
+## Capabilities
 
 - **`/crystallize [scope]`** — single entry point. Classifies scope
   (specific / domain / whole), runs map → mine → diff → referee against a
@@ -70,6 +92,16 @@ Git and keep this repository as the source.
 
 See `DESIGN.md` for the design locks and `plugins/crystallize/README.md` for full
 usage.
+
+## Portability, honestly
+
+The `skills/` core is [Agent Skills](https://agentskills.io) — an open standard
+adopted by ~40 products (Claude Code, Codex, Copilot, Cursor, Gemini CLI, VS Code,
+…). What travels across all of them is the `SKILL.md` instructions and their
+bundled reference methods. The manifests, marketplace catalogs, and any subagent
+dispatch are per-harness — this repo ships the Claude Code and Codex adapters. So
+"works on any AI" precisely means "works on any harness that adopted Agent Skills";
+on one that hasn't, you can still point the agent at a `SKILL.md` directly.
 
 ## License
 

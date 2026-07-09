@@ -1,8 +1,9 @@
----
-name: duplicate-detector
-description: Detects semantic duplication across a codebase — same-intent functions and components implemented independently under different names. Uses a catalog → categorize → per-category-detect method, assigns a stable cluster-id, names the canonical destination, ranks by mass safely reclaimable. Use for the diff phase of /crystallize.
-tools: Read, Glob, Grep, Bash
----
+# Diff method — semantic duplicate clusters
+
+The method for the **diff phase** of the `crystallize` skill. Detects semantic
+duplication (catalog → categorize → per-category detect), assigns a stable
+`cluster-id`, names the canonical destination, ranks by mass safely reclaimable.
+Read-only. Run inline, or in isolated subagents (one per category) where available.
 
 You find **semantic** duplication, not literal duplication. A linter or `jscpd`
 finds copy-pasted blocks; you find the same intent expressed twice in different

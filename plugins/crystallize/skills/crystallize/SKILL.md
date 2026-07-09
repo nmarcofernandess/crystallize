@@ -1,9 +1,16 @@
 ---
-description: Build or refresh the .context knowledge graph for a scope, detect duplicate clusters, and synthesize a consolidation brief for human approval. Single entry point; classifies scope and runs the smallest honest pass. Never rewrites code.
-argument-hint: [scope]
+name: crystallize
+description: Build or refresh the .context knowledge graph for a scope, detect duplicate clusters, and synthesize a consolidation brief for human approval. Single entry point; classifies scope and runs the smallest honest pass. Never rewrites code. Use when asked to crystallize, consolidate, dedupe, or build a .context for a codebase, domain, or component family.
 ---
 
-`scope` (optional) decides the size of the run. Classify it:
+This skill orchestrates a pipeline of phases. Each phase's method is a bundled
+reference under `../../assets/references/`; read it when you reach that phase and
+follow it. On a harness with isolated subagents you may run a phase in its own
+subagent — recommended for the referee step, where independence is a correctness
+feature; otherwise run each phase inline in sequence. The pipeline and its outputs
+are identical either way.
+
+`scope` (the argument, optional) decides the size of the run. Classify it:
 
 - **specific** — a pattern family name (`modais`, `cards`, `filters`): build/refresh
   only that `patterns/<x>.yaml` (+ its tree, if earned) and flag its forks.
@@ -47,8 +54,8 @@ hashes, makes that phase and every later phase stale — they must re-run.
 
 ## Step 1 — map (Tier-1 skeleton; if missing or stale)
 
-Invoke `context-mapper` for the scope. Pass it the current timestamp for
-`generated_at` (never let it invent one). Write:
+Run the **map method** (`../../assets/references/map-method.md`) for the scope.
+Pass it the current timestamp for `generated_at` (never invent one). Write:
 - `.context/index/components.generated.yaml` (its GENERATED_INDEX)
 - the SYSTEM_MAP_SKELETON into `.context/manifest.yaml#system_map`
 
@@ -56,16 +63,18 @@ Update `status.json` `phases.map`.
 
 ## Step 2 — mine (intent; if missing or stale, or map re-ran)
 
-Invoke `intent-extractor` for the scope, passing it the generated index as a map
-of where to look. Keep its BUSINESS_INTENT and UI_INTENT as working input under
+Run the **mine method** (`../../assets/references/intent-method.md`) for the scope,
+using the generated index as a map of where to look. Keep its BUSINESS_INTENT and
+UI_INTENT as working input under
 `.context/_crystallize/` — this is proposal material, not yet graph.
 
 Update `status.json` `phases.mine`.
 
 ## Step 3 — diff (duplicate clusters; if missing or stale, or mine re-ran)
 
-Invoke `duplicate-detector`, passing the generated index + both intent tracks. It
-runs catalog → categorize → per-category detect (never full-catalog comparison —
+Run the **diff method** (`../../assets/references/duplicate-method.md`) with the
+generated index + both intent tracks. It runs catalog → categorize → per-category
+detect (never full-catalog comparison —
 that's noise). Cost-tier the passes: categorization is cheap (a haiku-class model
 is enough to bucket by domain); the per-category duplicate detection is the
 careful, expensive pass (opus-class) — this split is the efficiency win, don't run
@@ -89,7 +98,8 @@ Update `status.json` `phases.diff`.
 
 Before anything curated is proposed, verify. For each cluster and each candidate
 canonical claim (its `extends`/base, its consumer counts, its "these instances
-are equivalent"), invoke `claim-referee` — one claim per referee. Drop or correct
+are equivalent"), run the **referee method** (`../../assets/references/referee-method.md`)
+— one claim at a time, and (where subagents exist) in isolation. Drop or correct
 every claim the referee refutes/corrects. Only verified claims proceed.
 
 ## Step 5 — synthesize the brief (only when map, mine, diff are all fresh)
@@ -98,8 +108,9 @@ If any phase just re-ran due to staleness, stop and report what refreshed; re-ru
 `/crystallize` once to confirm nothing changed, then continue. (If Steps 1–3
 changed nothing, continue immediately.)
 
-Invoke `context-architect` with the verified clusters + intent. Write its
-PROPOSED_* blocks into `.context/_crystallize/CRYSTALLIZE_BRIEF.md` (not yet into
+Run the **synthesis method** (`../../assets/references/synthesis-method.md`) with
+the verified clusters + intent. Write its PROPOSED_* blocks into
+`.context/_crystallize/CRYSTALLIZE_BRIEF.md` (not yet into
 the live graph). The brief is: the proposed patterns/trees/index/domains, the
 over-engineering self-review, and the open questions.
 
@@ -118,12 +129,15 @@ the approved Tier-2 blocks from the brief into `.context/` (patterns, trees,
 curated index, domains, manifest registry) and mark those clusters `"approved"` in
 `status.json`. Only then can `/crystallize-apply` run.
 
-After promoting anything into the live graph, run the validator and report its
-result — a promoted node that points at a file which doesn't exist is a lie the
-graph must not keep:
+After promoting anything into the live graph, run the bundled validator and report
+its result — a promoted node that points at a file which doesn't exist is a lie the
+graph must not keep. The validator is at `scripts/validate-context.py` under this
+plugin's root (Claude Code exposes it as `${CLAUDE_PLUGIN_ROOT}`; other harnesses
+via their own plugin-root variable — resolve it however your harness bundles skill
+resources):
 
 ```
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate-context.py" --context .context --repo .
+python3 "<plugin-root>/scripts/validate-context.py" --context .context --repo .
 ```
 
 If it reports errors (dangling paths, unresolved references), fix them before
