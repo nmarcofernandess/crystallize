@@ -37,7 +37,7 @@ enters the graph until a referee verified it against the code AND you approved
 it.
 
 ```
-/crystallize-apply <cluster-id>   # consolidate one approved cluster + prove no drift
+/crystallize-apply [cluster-id]   # resumable consolidation campaign — step by step, prove no drift, survives context loss
 /crystallize-guard "a modal for X" # anti-fork check: does a canonical form exist?
 /crystallize-status               # read-only: freshness, tiers, gate, clusters
 ```
@@ -70,7 +70,7 @@ is legible:
 - `duplicate-detector` — semantic duplicate clusters (catalog → categorize → per-category detect); names the canonical destination. Composes `superpowers-lab:finding-duplicate-functions` as an optional TS/JS accelerator
 - `claim-referee` — re-derives each claim against the cited code (makes Tier-2 true)
 - `context-architect` — synthesizes the curated graph, with an anti-over-engineering self-review
-- `consolidator` — applies one cluster via Reuse/Altitude, behavior gate + removed-behavior audit
+- `consolidator` — executes one plan step (build canonical / migrate one instance) via Reuse/Altitude, behavior gate + removed-behavior audit, structured outcome for the log
 
 ## Validate the graph
 

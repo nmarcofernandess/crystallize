@@ -31,9 +31,15 @@ Read `.context/status.json` (schema below). Create it with defaults if absent.
   },
   "gate": "pending",
   "clusters": [],
+  "execution": { "active": null, "progress": {} },
   "nextSuggestedCommand": null
 }
 ```
+
+`clusters[].status` is one of `pending | approved | in_progress | applied |
+blocked | discarded`. The `execution` block is the resume pointer for the apply
+campaign — `/crystallize-apply` owns it (see that command); `/crystallize` only
+initializes it.
 
 **Staleness:** for each phase already run, recompute `shasum -a 256` for its
 `fileHashes` and compare. Any mismatch, or new in-scope files absent from `map`'s

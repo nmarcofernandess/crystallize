@@ -35,8 +35,9 @@ its directory (`domains/`, `patterns/`, `trees/`, `index/`). A top-level
   index/
     components.yaml             # curated reuse targets
     components.generated.yaml   # generated walk (Tier 1)
-  status.json                   # plugin process state
+  status.json                   # plugin process state (+ execution resume pointer)
   _crystallize/                 # working artifacts (brief, variations, notes)
+    execution/<cluster-id>/     # durable apply campaign: plan.json (immutable) + log.jsonl (append-only)
 ```
 
 ## Per-category shape

@@ -55,10 +55,13 @@ Git and keep this repository as the source.
   graph, and synthesizes a brief of proposed Tier-2 judgment. Stops at a
   plan-mode approval gate. Never rewrites code, and nothing curated persists
   until a referee verified it and you approved it.
-- **`/crystallize-apply <cluster-id>`** — consolidates one approved duplicate
-  cluster into its canonical form (Reuse or Altitude), proves behavior didn't
-  drift against the repo's own test harness, updates the graph. Refuses anything
-  not `approved`.
+- **`/crystallize-apply [cluster-id]`** — runs the resumable consolidation
+  campaign. Applies approved clusters step by step (build the canonical form, then
+  migrate each instance), proving behavior didn't drift against the repo's own test
+  harness at every step. Each cluster has an immutable `plan.json` and an
+  append-only `log.jsonl` under `.context/_crystallize/execution/`, so a fresh agent
+  resumes exactly where it stopped — never redoing work, never leaving a cluster
+  half-applied. Refuses anything not `approved`.
 - **`/crystallize-guard "<what you're about to build>"`** — anti-fork check.
   Reads the curated graph, tells you whether a canonical form already exists and
   what to extend. Read-only, staleness-aware.

@@ -1,51 +1,87 @@
 ---
-description: Apply ONE approved duplicate cluster from the crystallize brief — collapse its instances into the canonical form, prove behavior didn't drift against the repo's own harness, and update the .context graph. Refuses clusters that aren't approved.
-argument-hint: <cluster-id> [scope]
+description: Run the consolidation campaign — apply approved duplicate clusters one step at a time, durably and resumably. Each cluster has its own plan + append-only log so a fresh agent can pick up mid-campaign without losing its place or redoing work.
+argument-hint: [cluster-id]
 ---
 
-`cluster-id`: required, must match an entry in `.context/status.json.clusters`.
-`scope` (optional): same classification as `/crystallize`; used only to resolve
-which `.context` you're in (a repo has one `.context/` at root, so this is almost
-always inferable).
+This is the big, slow phase. Treat it as a **resumable campaign**, never a
+one-shot: the work outlasts a context window, so state on disk — not memory — is
+the source of truth. Do the smallest durable unit, record it, then the next.
 
-## Step 1 — load and validate
+## Step 1 — resolve which cluster to work
 
 Read `.context/status.json`. If absent: "No crystallize run found — run
-/crystallize first." Find `$1` in `clusters`. If missing, stop and list the known
-cluster-ids. If its `status` is not `"approved"`, stop:
+/crystallize first." Then pick the cluster:
+
+- `$1` given → that cluster. If its `status` is not `approved`/`in_progress`/`blocked`,
+  stop: only clusters the human approved can be applied.
+- `$1` empty → resume the campaign: the `execution.active` cluster if one is
+  `in_progress`; else the highest-mass `approved` cluster. If none, report the
+  campaign is done (or nothing is approved yet) and stop.
+
+If the chosen cluster is `blocked`, show its `blockedReason` and ask the user to
+confirm the blocker is resolved before continuing.
+
+## Step 2 — load or build the plan (immutable once started)
+
+Plan lives at `.context/_crystallize/execution/<cluster-id>/plan.json`.
+
+- **Absent** → build it from the cluster's `#### Cluster` block in `VARIATIONS.md`
+  and its canonical form in `CRYSTALLIZE_BRIEF.md`. Ordered steps:
+  - `s0` — `build-canonical`: create the shared form (glossary name from the
+    brief). Verification = the repo's own typecheck/build for that area.
+  - `s1..sN` — one `migrate-instance` per instance, each carrying its
+    `file:line` ref and a `verification.command` (the narrowest relevant test the
+    repo has for that area) with `expected: pass`.
+  Write `plan.json` with `schema_version: "crystallize.exec.v1"`. **Never rewrite
+  a plan that already exists** — it is the immutable contract the log is measured
+  against.
+- **Present** → use it as-is.
+
+Set `status.json`: cluster `status` → `in_progress`, `execution.active` →
+`<cluster-id>`, `execution.progress[<cluster-id>]` = `{ steps_total, steps_done,
+state: "in_progress" }`.
+
+## Step 3 — find the resume point
+
+Read `.context/_crystallize/execution/<cluster-id>/log.jsonl` (append-only; may be
+empty/absent). The set of `step_id`s with `outcome: "done"` are complete. The
+resume point is the **first plan step not marked done**. Everything before it is
+finished — do not rebuild the canonical, do not re-migrate a migrated instance.
+
+## Step 4 — execute steps, one at a time, logging each
+
+For each step from the resume point onward:
+
+1. Invoke `consolidator` for **that one step only** — pass the step's kind, its
+   `ref` (for migrate), the canonical form + glossary name, and the
+   `verification.command`. The consolidator does exactly that unit, runs the
+   behavior gate, and returns a structured outcome.
+2. **Append one line** to `log.jsonl`: `{ step_id, outcome: "done|blocked|failed",
+   proof: "<command> → <result>", removed_behavior_audit, deviations }`. Append
+   only — never rewrite prior lines.
+3. Update `execution.progress[<cluster-id>].steps_done` and re-derive `state`.
+4. **If the outcome is not `done`** (behavior gate failed, a dropped guard, or an
+   instance that doesn't match the cluster): STOP the cluster. Set cluster
+   `status` → `blocked`, `execution.progress[...].state` → `blocked`,
+   `blockedReason` = the reason. Report the clean resume point and stop — do not
+   limp on to the next step or the next cluster. A half-applied cluster that keeps
+   going is how the mess starts.
+
+## Step 5 — close the cluster
+
+When every plan step is `done`: cluster `status` → `applied`; append the
+consolidator's cluster summary to `.context/_crystallize/CONSOLIDATION_NOTES.md`;
+confirm the graph updates landed (pattern `extends`/`consumers`, curated index);
+set `execution.active` → the next `approved` cluster (or null). Run the graph
+validator and report:
 
 ```
-Cluster "<id>" is "<status>", not approved. /crystallize-apply only runs against
-clusters the human approved in CRYSTALLIZE_BRIEF.md. Approve it (re-run
-/crystallize and approve through the gate) before applying.
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate-context.py" --context .context --repo .
 ```
 
-## Step 2 — gather context
+## Step 6 — report
 
-From `.context/_crystallize/VARIATIONS.md`, extract the full `#### Cluster: <id>`
-block (intent, mechanism, instances, canonical destination, behavior-preservation
-risk). From `.context/_crystallize/CRYSTALLIZE_BRIEF.md` and the live graph,
-extract the canonical form's pattern entry and the glossary name it must use.
-
-## Step 3 — apply
-
-Invoke `consolidator` with exactly that context — the cluster's instance list, its
-mechanism (Reuse or Altitude), its canonical destination, its glossary name.
-Nothing else. The consolidator runs the behavior gate (the repo's own tests/
-typecheck) and the removed-behavior audit itself.
-
-## Step 4 — record
-
-Append the consolidator's summary to `.context/_crystallize/CONSOLIDATION_NOTES.md`
-under a timestamped heading. Set this cluster's `status` → `"applied"`. Set `gate`
-→ `"partially_applied"` while any cluster remains not-yet-terminal; leave it as-is
-once every cluster is `"applied"`/`"discarded"`. Confirm the consolidator's graph
-updates landed in `.context/` (pattern `extends`/`consumers`, curated index).
-
-## Step 5 — report
-
-Show the consolidator's summary, and surface loudly:
-- the **behavior proof** (exact command + result) — if it didn't pass, the cluster
-  is NOT done; leave it `"approved"` and report the failure honestly.
-- any **deviations / suspected bugs** it preserved — those need a human decision,
-  not a silent merge.
+Show: the cluster's progress (`steps_done/steps_total`), the behavior proof of the
+steps run this session, any deviations/suspected bugs preserved (these need a human
+decision, never a silent merge), and the next command — `/crystallize-apply` to
+continue the campaign, or the resolved blocker if one stopped it.

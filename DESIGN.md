@@ -115,12 +115,56 @@ The graph files are kept pristine for day-to-day agents; `status.json` and
 Folder is the type discriminator (not the in-file key). Every freshness field is
 optional. `status: draft|proposed` marks lower-confidence nodes.
 
+## The execution phase is durable and resumable
+
+Detecting duplication is fast. **Consolidating it is the big, slow part** — many
+approved clusters, and within each cluster many instances migrated one at a time,
+each behind a behavior gate. That campaign will outlast a single context window.
+If the agent loses its place mid-consolidation it re-creates, re-duplicates, and
+leaves a mess — the exact failure this plugin exists to cure. So execution gets
+its own folder and granular, resumable state.
+
+State lives in three places, mirroring the proven immutable-plan / append-only-log
+/ terse-pointer split:
+
+```
+.context/_crystallize/execution/<cluster-id>/
+  plan.json    # immutable once started: ordered steps —
+               #   step 0: build the canonical form
+               #   step k: migrate instance k, with its behavior-gate command
+  log.jsonl    # append-only: one line per attempted step — outcome, the proof
+               #   command + result, the removed-behavior audit, any deviation
+```
+
+`status.json` carries the resume **pointer** (not the task list):
+
+```json
+"execution": {
+  "active": "<cluster-id or null>",
+  "progress": {
+    "<cluster-id>": { "steps_total": N, "steps_done": M,
+                      "state": "not_started|in_progress|done|blocked",
+                      "blockedReason": null }
+  }
+}
+```
+
+**The guarantee.** `/crystallize-apply` is resumable: it reads the log, finds the
+first step not marked `done`, and continues from exactly there. It never rebuilds
+a canonical form already built, never re-migrates an instance already migrated. A
+step that fails its behavior gate stops the cluster cleanly, records why, and
+leaves an obvious resume point — the cluster stays `blocked`, not silently
+half-done. A fresh agent with zero memory of the session can pick up the campaign
+from `status.json` + the logs alone.
+
 ## Surface
 
 - `/crystallize [scope]` — build/refresh the graph for the scope, detect
   duplicate clusters, synthesize the brief, stop at the approval gate.
-- `/crystallize-apply <cluster-id>` — consolidate one approved cluster into its
-  canonical form, behavior gate + removed-behavior audit, update the graph.
+- `/crystallize-apply [cluster-id]` — run the resumable consolidation campaign:
+  apply approved clusters step by step (build canonical → migrate each instance),
+  behavior gate + removed-behavior audit per step, durable plan.json + log.jsonl so
+  it resumes exactly where it stopped. No arg continues the campaign.
 - `/crystallize-guard <what>` — anti-fork check, read-only, staleness-aware.
 - `/crystallize-status [scope]` — read-only: freshness, tiers, gate, pending
   clusters, next step.
