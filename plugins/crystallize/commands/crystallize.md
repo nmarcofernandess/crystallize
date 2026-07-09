@@ -58,11 +58,21 @@ Update `status.json` `phases.mine`.
 
 ## Step 3 — diff (duplicate clusters; if missing or stale, or mine re-ran)
 
-Invoke `duplicate-detector`, passing the generated index + both intent tracks.
+Invoke `duplicate-detector`, passing the generated index + both intent tracks. It
+runs catalog → categorize → per-category detect (never full-catalog comparison —
+that's noise). Cost-tier the passes: categorization is cheap (a haiku-class model
+is enough to bucket by domain); the per-category duplicate detection is the
+careful, expensive pass (opus-class) — this split is the efficiency win, don't run
+the whole thing at one tier. If `superpowers-lab:finding-duplicate-functions` is
+installed and the code is TS/JS, its `extract-functions.sh` + per-category prompt
+are a proven accelerator for the catalog + detection — the detector may use them
+and map results into the cluster format.
+
 Write its VARIATIONS to `.context/_crystallize/VARIATIONS.md`. Parse each
 `#### Cluster: <cluster-id>` into `status.json.clusters` as
-`{ id, intent, mechanism, mass, risk, status: "pending" }`, preserving the
-`status` of any cluster-id already present (never reset an `applied` cluster).
+`{ id, intent, category, mechanism, confidence, recommendation, mass, risk, status: "pending" }`,
+preserving the `status` of any cluster-id already present (never reset an
+`applied` cluster).
 
 For a **whole** scope, loop map→mine→diff until two consecutive diff rounds add no
 new cluster (loop-until-dry). For **specific**/**domain**, one pass is enough.

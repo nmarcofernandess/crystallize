@@ -67,7 +67,7 @@ is legible:
 
 - `context-mapper` — Tier-1 skeleton (generated index + system_map), grep/glob, language-agnostic
 - `intent-extractor` — business + UI intent from the code as informal spec
-- `duplicate-detector` — semantic duplicate clusters; names the canonical destination
+- `duplicate-detector` — semantic duplicate clusters (catalog → categorize → per-category detect); names the canonical destination. Composes `superpowers-lab:finding-duplicate-functions` as an optional TS/JS accelerator
 - `claim-referee` — re-derives each claim against the cited code (makes Tier-2 true)
 - `context-architect` — synthesizes the curated graph, with an anti-over-engineering self-review
 - `consolidator` — applies one cluster via Reuse/Altitude, behavior gate + removed-behavior audit

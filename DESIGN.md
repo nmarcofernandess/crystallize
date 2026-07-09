@@ -131,7 +131,12 @@ optional. `status: draft|proposed` marks lower-confidence nodes.
   language-agnostic, read-only.
 - `intent-extractor` — business rules + UI intent from the code as informal spec.
 - `duplicate-detector` — semantic duplicate clusters; assigns `cluster-id`, names
-  the canonical destination, ranks by mass-reclaimed-safely.
+  the canonical destination, ranks by mass-reclaimed-safely. Method: catalog →
+  categorize (cheap model) → per-category detect (careful model), with a
+  HIGH/MEDIUM/LOW × CONSOLIDATE/INVESTIGATE/KEEP_SEPARATE model and "when in doubt,
+  INVESTIGATE". Composes the `superpowers-lab:finding-duplicate-functions` toolbox
+  as an optional accelerator on TS/JS (reuse over reinvention — the plugin obeys
+  its own thesis); language-agnostic grep/glob otherwise.
 - `claim-referee` — re-derives each proposed canonical claim / `extends` / anti-
   pattern against the cited code and confirms or refutes it. The gate that makes
   Tier 2 true.
