@@ -37,11 +37,16 @@ DESIGN.md                             # rationale, the five design locks
 plugins/crystallize/
   .claude-plugin/plugin.json          # Claude Code plugin manifest
   .codex-plugin/plugin.json           # Codex plugin manifest
-  skills/                             # ← portable core: crystallize, -apply, -guard, -status
-    <name>/SKILL.md
-  assets/references/                  # phase methods the skills read (map, mine, diff, referee, synthesis, consolidator)
-  scripts/validate-context.py         # structural graph validator
-  CONTEXT_SCHEMA.md                   # the generic .context contract
+  skills/                             # portable, self-contained Agent Skills
+    crystallize/
+      SKILL.md
+      references/                     # map, mine, diff, referee, synthesis, schema
+      scripts/validate-context.py     # structural graph validator
+    crystallize-apply/
+      SKILL.md
+      references/consolidator-method.md
+    crystallize-guard/SKILL.md
+    crystallize-status/SKILL.md
   README.md                           # plugin usage
 ```
 
@@ -50,24 +55,113 @@ Git and keep this repository as the source.
 
 ## Install
 
-**Claude Code**
+Version `0.3.1` is the minimum supported release. Version `0.3.0` contained an
+unsupported Claude manifest field and could not be installed by current Claude
+Code.
 
-```
-/plugin marketplace add nmarcofernandess/crystallize
-/plugin install crystallize@crystallize
+### Prerequisites
+
+- Git, plus a current release of the target agent CLI.
+- Python 3 for the structural graph validator.
+- PyYAML in the Python environment used by the agent:
+
+```bash
+python -m pip install "PyYAML>=6.0,<7"
 ```
 
-**Codex**
+On systems where Python 3 is exposed as `python3`, use `python3 -m pip`
+instead. Crystallize stops with an explicit prerequisite error if PyYAML is
+missing; validation is never silently skipped.
 
+Reference documentation: [Claude Code marketplaces](https://code.claude.com/docs/en/plugin-marketplaces),
+[Gemini CLI Agent Skills](https://geminicli.com/docs/cli/using-agent-skills/),
+and the [universal skills CLI](https://github.com/vercel-labs/skills).
+
+### Claude Code: native marketplace
+
+```bash
+claude plugin marketplace add nmarcofernandess/crystallize --scope user
+claude plugin install crystallize@crystallize --scope user
+claude plugin list --json
 ```
+
+Restart Claude Code after installation. The skills are namespaced by the plugin,
+for example `/crystallize:crystallize` and
+`/crystallize:crystallize-guard`.
+
+### Codex: native marketplace
+
+```bash
 codex plugin marketplace add nmarcofernandess/crystallize --ref main
 codex plugin add crystallize@crystallize
+codex plugin list --json
 ```
 
-The four capabilities are invoked as skills (`/crystallize`, `/crystallize-apply`,
-`/crystallize-guard`, `/crystallize-status` — namespaced by the harness). On a
-harness with isolated subagents, the pipeline phases may fan out for stronger
-verification independence; without them they run inline in sequence — same result.
+Start a new Codex thread after installation so the new skills are loaded. Codex
+shows them under the `crystallize:` namespace.
+
+### Gemini CLI
+
+The repository contains four self-contained Agent Skills. Install all four with
+the universal Agent Skills installer:
+
+```bash
+npx skills add nmarcofernandess/crystallize --skill '*' --agent gemini-cli --global --copy
+gemini skills list
+```
+
+Inside Gemini CLI, run `/skills reload` after installing, then `/skills list`
+to verify discovery. Gemini activates skills from the prompt; it does not expose
+the Claude plugin slash-command namespace.
+
+### Other Agent Skills harnesses
+
+Inspect the available skills, then let the installer detect a supported agent:
+
+```bash
+npx skills add nmarcofernandess/crystallize --list
+npx skills add nmarcofernandess/crystallize --skill '*'
+```
+
+Use `--global` for a user-wide install or omit it for project scope. The
+installer supports Codex, Claude Code, Gemini CLI, Cursor, GitHub Copilot,
+OpenCode, and other Agent Skills hosts. Native Claude/Codex marketplace installs
+remain preferred because they preserve plugin version and marketplace metadata.
+
+### Update
+
+```bash
+# Claude Code
+claude plugin marketplace update crystallize
+claude plugin update crystallize@crystallize
+
+# Codex
+codex plugin marketplace upgrade crystallize
+codex plugin add crystallize@crystallize
+
+# Gemini CLI / universal Agent Skills installs
+npx skills update crystallize crystallize-apply crystallize-guard crystallize-status --global
+```
+
+Restart the host, or start a new session/thread, after updating.
+
+### Troubleshooting
+
+- `Unrecognized key: "displayName"`: refresh the marketplace and confirm that
+  `0.3.1` or newer is installed.
+- `No module named yaml`: install PyYAML with the same Python interpreter the
+  agent runs.
+- Plugin installed but skills are absent: restart Claude/Codex; in Gemini run
+  `/skills reload`.
+- Testing a non-main branch: Claude accepts a full Git URL with `#branch`;
+  Codex accepts `--ref branch`. Do not replace a stable marketplace source
+  accidentally.
+
+The four capabilities are invoked as skills (`crystallize`,
+`crystallize-apply`, `crystallize-guard`, `crystallize-status`; exact
+namespacing depends on the host). On a harness with isolated subagents, the
+pipeline phases may fan out for stronger verification independence; without
+them they run inline in sequence with the same artifacts and gates.
 
 ## Capabilities
 
@@ -95,13 +189,13 @@ usage.
 
 ## Portability, honestly
 
-The `skills/` core is [Agent Skills](https://agentskills.io) — an open standard
-adopted by ~40 products (Claude Code, Codex, Copilot, Cursor, Gemini CLI, VS Code,
-…). What travels across all of them is the `SKILL.md` instructions and their
-bundled reference methods. The manifests, marketplace catalogs, and any subagent
-dispatch are per-harness — this repo ships the Claude Code and Codex adapters. So
-"works on any AI" precisely means "works on any harness that adopted Agent Skills";
-on one that hasn't, you can still point the agent at a `SKILL.md` directly.
+The `skills/` core is [Agent Skills](https://agentskills.io), and every skill
+keeps its required references or scripts inside its own directory so standalone
+installers do not produce partial packages. Claude Code and Codex use native
+marketplace adapters. Gemini CLI and other compatible hosts use the portable
+skills directly. Harness-specific features such as namespacing, isolated
+subagents, and reload behavior remain host-specific; the graph contract,
+approval gate, and output artifacts stay the same.
 
 ## License
 

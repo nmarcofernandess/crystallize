@@ -1,6 +1,8 @@
 {
   "name": "crystallize",
-  "description": "Build a durable .context knowledge graph that makes reuse the default and forking a justified exception: map, mine, diff, referee, approve, apply.",
+  "metadata": {
+    "description": "Build a durable .context knowledge graph that makes reuse the default and forking a justified exception: map, mine, diff, referee, approve, apply."
+  },
   "owner": {
     "name": "Marco Antonio",
     "url": "https://github.com/nmarcofernandess"

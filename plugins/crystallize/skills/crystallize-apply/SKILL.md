@@ -6,7 +6,7 @@ description: Run the consolidation campaign — apply approved duplicate cluster
 This is the big, slow phase. Treat it as a **resumable campaign**, never a
 one-shot: the work outlasts a context window, so state on disk — not memory — is
 the source of truth. Do the smallest durable unit, record it, then the next. The
-per-step worker method is in `../../assets/references/consolidator-method.md`; on a
+per-step worker method is in `references/consolidator-method.md`; on a
 harness with isolated subagents you may run each step in one, otherwise inline.
 
 The argument is an optional `cluster-id`.
@@ -57,7 +57,7 @@ finished — do not rebuild the canonical, do not re-migrate a migrated instance
 
 For each step from the resume point onward:
 
-1. Run the **consolidator method** (`../../assets/references/consolidator-method.md`)
+1. Run the **consolidator method** (`references/consolidator-method.md`)
    for **that one step only** — pass the step's kind, its `ref` (for migrate), the
    canonical form + glossary name, and the `verification.command`. It does exactly
    that unit, runs the behavior gate, and returns a structured outcome.
@@ -77,13 +77,13 @@ For each step from the resume point onward:
 When every plan step is `done`: cluster `status` → `applied`; append the
 consolidator's cluster summary to `.context/_crystallize/CONSOLIDATION_NOTES.md`;
 confirm the graph updates landed (pattern `extends`/`consumers`, curated index);
-set `execution.active` → the next `approved` cluster (or null). Run the bundled
-graph validator (`scripts/validate-context.py` under this plugin's root — Claude
-Code: `${CLAUDE_PLUGIN_ROOT}`; other harnesses via their plugin-root variable) and
-report:
+set `execution.active` → the next `approved` cluster (or null). Run the
+project-local graph validator created by `/crystallize`. Prefer `python3` when
+available, otherwise `python` on Windows. If the tool or PyYAML is missing, stop
+and report the explicit prerequisite instead of skipping validation:
 
 ```
-python3 "<plugin-root>/scripts/validate-context.py" --context .context --repo .
+<python> ".context/_crystallize/tools/validate-context.py" --context .context --repo .
 ```
 
 ## Step 6 — report

@@ -44,9 +44,10 @@ Two things, both mechanically derivable:
 - **Scope obeys the request.** If given a pattern family (`modais`) or a domain
   (`despesas`), walk only that slice. If given nothing, walk the whole source
   root.
-- **Read-only.** Bash for read-only inspection only (`grep`, `find`, `wc`,
-  `scc`/`cloc` if present). Never create or modify files — return findings; the
-  orchestrating skill writes them.
+- **Read-only and host-native.** Prefer `rg` and `git ls-files` when available.
+  On Windows, PowerShell `Get-ChildItem`/`Select-String` are valid; on Unix,
+  `find`/`grep`/`wc` are valid. Never require one shell, and never create or
+  modify files — return findings; the orchestrating skill writes them.
 
 ## Output format
 
