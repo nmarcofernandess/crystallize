@@ -1,0 +1,20 @@
+{
+  "name": "crystallize",
+  "displayName": "Crystallize",
+  "version": "0.1.0",
+  "description": "Consolidate a stable, self-authored prototype into canonical, reusable architecture. Maps what exists, mines business and UI intent, detects semantic duplication across components, and synthesizes an approved consolidation brief before touching any code. Single entry point (/crystallize), state tracked in STATUS.json, applied one pattern at a time via /crystallize-apply.",
+  "author": {
+    "name": "Marco Antonio",
+    "url": "https://github.com/nmarcofernandess"
+  },
+  "repository": "https://github.com/nmarcofernandess/crystallize",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "refactoring",
+    "consolidation",
+    "duplication-detection",
+    "architecture",
+    "prototype-to-production"
+  ]
+}
