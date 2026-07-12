@@ -3,8 +3,8 @@ name: crystallize
 description: Build or refresh the .context knowledge graph for a scope, detect duplicate clusters, and synthesize a consolidation brief for human approval. Single entry point; classifies scope and runs the smallest honest pass. Never rewrites code. Use when asked to crystallize, consolidate, dedupe, or build a .context for a codebase, domain, or component family.
 ---
 
-This skill orchestrates a pipeline of phases. Each phase's method is a bundled
-reference under `../../assets/references/`; read it when you reach that phase and
+This skill orchestrates a pipeline of phases. Each phase's method is bundled
+under this skill's `references/` directory; read it when you reach that phase and
 follow it. On a harness with isolated subagents you may run a phase in its own
 subagent — recommended for the referee step, where independence is a correctness
 feature; otherwise run each phase inline in sequence. The pipeline and its outputs
@@ -48,13 +48,28 @@ blocked | discarded`. The `execution` block is the resume pointer for the apply
 campaign — `/crystallize-apply` owns it (see that command); `/crystallize` only
 initializes it.
 
-**Staleness:** for each phase already run, recompute `shasum -a 256` for its
-`fileHashes` and compare. Any mismatch, or new in-scope files absent from `map`'s
-hashes, makes that phase and every later phase stale — they must re-run.
+**Portable runtime tool:** resolve the active skill directory and copy
+`scripts/validate-context.py` to
+`.context/_crystallize/tools/validate-context.py` when the destination is absent
+or differs from the bundled file. This project-local copy is what the other
+Crystallize skills use, so they do not depend on a harness-specific plugin-root
+variable. If the copy cannot be made, stop and report the missing runtime tool.
+
+**Staleness:** for each phase already run, recompute SHA-256 for its `fileHashes`
+and compare. Store only the lowercase 64-character hex digest. Use an available
+host-native command:
+
+- Windows PowerShell: `(Get-FileHash -Algorithm SHA256 -LiteralPath <path>).Hash.ToLowerInvariant()`
+- Linux: `sha256sum <path>`
+- macOS: `shasum -a 256 <path>`
+
+If none is available, stop and report that freshness cannot be proven. Any
+mismatch, or new in-scope files absent from `map`'s hashes, makes that phase and
+every later phase stale — they must re-run.
 
 ## Step 1 — map (Tier-1 skeleton; if missing or stale)
 
-Run the **map method** (`../../assets/references/map-method.md`) for the scope.
+Run the **map method** (`references/map-method.md`) for the scope.
 Pass it the current timestamp for `generated_at` (never invent one). Write:
 - `.context/index/components.generated.yaml` (its GENERATED_INDEX)
 - the SYSTEM_MAP_SKELETON into `.context/manifest.yaml#system_map`
@@ -63,7 +78,7 @@ Update `status.json` `phases.map`.
 
 ## Step 2 — mine (intent; if missing or stale, or map re-ran)
 
-Run the **mine method** (`../../assets/references/intent-method.md`) for the scope,
+Run the **mine method** (`references/intent-method.md`) for the scope,
 using the generated index as a map of where to look. Keep its BUSINESS_INTENT and
 UI_INTENT as working input under
 `.context/_crystallize/` — this is proposal material, not yet graph.
@@ -72,7 +87,7 @@ Update `status.json` `phases.mine`.
 
 ## Step 3 — diff (duplicate clusters; if missing or stale, or mine re-ran)
 
-Run the **diff method** (`../../assets/references/duplicate-method.md`) with the
+Run the **diff method** (`references/duplicate-method.md`) with the
 generated index + both intent tracks. It runs catalog → categorize → per-category
 detect (never full-catalog comparison —
 that's noise). Cost-tier the passes: categorization is cheap (a haiku-class model
@@ -98,7 +113,7 @@ Update `status.json` `phases.diff`.
 
 Before anything curated is proposed, verify. For each cluster and each candidate
 canonical claim (its `extends`/base, its consumer counts, its "these instances
-are equivalent"), run the **referee method** (`../../assets/references/referee-method.md`)
+are equivalent"), run the **referee method** (`references/referee-method.md`)
 — one claim at a time, and (where subagents exist) in isolation. Drop or correct
 every claim the referee refutes/corrects. Only verified claims proceed.
 
@@ -108,7 +123,7 @@ If any phase just re-ran due to staleness, stop and report what refreshed; re-ru
 `/crystallize` once to confirm nothing changed, then continue. (If Steps 1–3
 changed nothing, continue immediately.)
 
-Run the **synthesis method** (`../../assets/references/synthesis-method.md`) with
+Run the **synthesis method** (`references/synthesis-method.md`) with
 the verified clusters + intent. Write its PROPOSED_* blocks into
 `.context/_crystallize/CRYSTALLIZE_BRIEF.md` (not yet into
 the live graph). The brief is: the proposed patterns/trees/index/domains, the
@@ -129,15 +144,15 @@ the approved Tier-2 blocks from the brief into `.context/` (patterns, trees,
 curated index, domains, manifest registry) and mark those clusters `"approved"` in
 `status.json`. Only then can `/crystallize-apply` run.
 
-After promoting anything into the live graph, run the bundled validator and report
-its result — a promoted node that points at a file which doesn't exist is a lie the
-graph must not keep. The validator is at `scripts/validate-context.py` under this
-plugin's root (Claude Code exposes it as `${CLAUDE_PLUGIN_ROOT}`; other harnesses
-via their own plugin-root variable — resolve it however your harness bundles skill
-resources):
+After promoting anything into the live graph, run the project-local validator and
+report its result — a promoted node that points at a file which doesn't exist is a
+lie the graph must not keep. Resolve the Python interpreter explicitly: prefer
+`python3` when available, otherwise `python` on Windows. If importing `yaml`
+fails, stop and show the PyYAML installation command instead of skipping
+validation:
 
 ```
-python3 "<plugin-root>/scripts/validate-context.py" --context .context --repo .
+<python> ".context/_crystallize/tools/validate-context.py" --context .context --repo .
 ```
 
 If it reports errors (dangling paths, unresolved references), fix them before

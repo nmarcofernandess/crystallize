@@ -1,7 +1,6 @@
 {
   "name": "crystallize",
-  "displayName": "Crystallize",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Build a durable .context knowledge graph from a stable, self-authored codebase — domains, patterns, component index, and decision trees that make reuse the default and forking a justified exception. Maps a Tier-1 skeleton by grep/glob, mines intent, detects semantic duplicate clusters, and only persists curated judgment after a referee verifies it against the code and a human approves it. /crystallize builds it, /crystallize-guard enforces anti-fork day to day, /crystallize-apply consolidates one cluster with a behavior gate.",
   "author": {
     "name": "Marco Antonio",

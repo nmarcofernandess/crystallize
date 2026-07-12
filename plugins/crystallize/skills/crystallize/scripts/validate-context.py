@@ -25,7 +25,11 @@ import sys
 try:
     import yaml
 except ImportError:
-    print("validate-context: needs PyYAML — `pip install pyyaml` (or run in an env that has it).", file=sys.stderr)
+    print(
+        'validate-context: needs PyYAML. Install it with the active interpreter: '
+        '`<python> -m pip install "PyYAML>=6.0,<7"`.',
+        file=sys.stderr,
+    )
     sys.exit(2)
 
 

@@ -14,23 +14,28 @@ canonicalization: same intent, fewer variations, one name per concept. Deletion
 is an *effect* of generalizing and reusing, never a goal of fewer lines.
 
 Full rationale in [`../../DESIGN.md`](../../DESIGN.md); the graph format in
-[`CONTEXT_SCHEMA.md`](CONTEXT_SCHEMA.md).
+[`skills/crystallize/references/CONTEXT_SCHEMA.md`](skills/crystallize/references/CONTEXT_SCHEMA.md).
 
 ## Install
 
-Claude Code:
+The repository [installation guide](../../README.md#install) contains
+prerequisites, update commands, verification, and troubleshooting. Quick paths:
 
-```
-/plugin marketplace add nmarcofernandess/crystallize
-/plugin install crystallize@crystallize
-```
+```bash
+# Claude Code
+claude plugin marketplace add nmarcofernandess/crystallize --scope user
+claude plugin install crystallize@crystallize --scope user
 
-Codex:
-
-```
+# Codex
 codex plugin marketplace add nmarcofernandess/crystallize --ref main
 codex plugin add crystallize@crystallize
+
+# Gemini CLI
+npx skills add nmarcofernandess/crystallize --skill '*' --agent gemini-cli --global --copy
 ```
+
+Python 3 and PyYAML `>=6,<7` are required for graph validation. Restart the
+host, or reload Gemini skills, after installing.
 
 ## Usage
 
@@ -74,10 +79,11 @@ is legible:
 
 ## Skills and phase methods
 
-Four skills (`skills/<name>/SKILL.md`) are the portable core: `crystallize`,
-`crystallize-apply`, `crystallize-guard`, `crystallize-status`. The pipeline
-phases are bundled methods under `assets/references/`, read by the skills (run
-inline, or in isolated subagents where the harness has them):
+Four self-contained skills (`skills/<name>/SKILL.md`) are the portable core:
+`crystallize`, `crystallize-apply`, `crystallize-guard`,
+`crystallize-status`. Pipeline methods live under the consuming skill's
+`references/` directory (run inline, or in isolated subagents where the harness
+has them):
 
 - `map-method` — Tier-1 skeleton (generated index + system_map), grep/glob, language-agnostic
 - `intent-method` — business + UI intent from the code as informal spec
@@ -88,14 +94,15 @@ inline, or in isolated subagents where the harness has them):
 
 ## Validate the graph
 
-```
-python3 scripts/validate-context.py --context .context --repo .
+```bash
+<python> .context/_crystallize/tools/validate-context.py --context .context --repo .
 ```
 
 Checks every graph file parses, the generated index carries `generated_at`,
 every `path:` points to a file that really exists (the anti-lie check), internal
 cross-references resolve, and reports `draft`/`proposed` nodes as
-lower-confidence.
+lower-confidence. The first `crystallize` run stages this project-local validator
+from the skill package. Use `python3` where available or `python` on Windows.
 
 ## License
 

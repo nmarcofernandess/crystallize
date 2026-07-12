@@ -12,19 +12,21 @@ This skill is read-only. It never writes to `.context/` or to code.
 
 ## Step 1 — staleness check first
 
-Read `.context/status.json`. Recompute `shasum -a 256` for the relevant phase's
-`fileHashes` (don't update them). For a machine anti-lie/staleness signal, also
-run the bundled validator (read-only) — `scripts/validate-context.py` under this
-plugin's root (Claude Code: `${CLAUDE_PLUGIN_ROOT}`; other harnesses via their
-plugin-root variable) — and factor its verdict in:
+Read `.context/status.json`. Recompute SHA-256 for the relevant phase's
+`fileHashes` without updating them. Use PowerShell `Get-FileHash` on Windows,
+`sha256sum` on Linux, or `shasum -a 256` on macOS, matching the portable
+digest rules in `/crystallize`. For a machine anti-lie/staleness signal, also
+run the project-local validator created by `/crystallize` and factor its verdict
+in. Prefer `python3` when available, otherwise `python` on Windows:
 
 ```
-python3 "<plugin-root>/scripts/validate-context.py" --context .context --repo .
+<python> ".context/_crystallize/tools/validate-context.py" --context .context --repo .
 ```
 
 If the graph is stale relative to the code, the validator reports dangling paths,
-or `.context/` doesn't exist, say so up front and answer with reduced confidence —
-a guard speaking confidently from a rotted map is a footgun:
+the project-local validator is missing, PyYAML is unavailable, or `.context/`
+doesn't exist, say so up front and answer with reduced confidence — a guard
+speaking confidently from a rotted map is a footgun:
 
 ```
 ⚠ .context is stale (code changed since last /crystallize) — treat this answer as

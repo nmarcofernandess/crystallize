@@ -174,10 +174,11 @@ from `status.json` + the logs alone.
 
 ## Phases (skills + bundled methods)
 
-The surface is four skills; the pipeline phases are bundled method files
-(`assets/references/`) the skills read. On a harness with isolated subagents a
-phase may run in its own subagent (recommended for the referee, where independence
-is a correctness feature); otherwise it runs inline — same result.
+The surface is four skills; the pipeline phases are bundled method files inside
+the consuming skill's `references/` directory. This keeps every Agent Skill
+self-contained when a host installs it independently. On a harness with isolated
+subagents a phase may run in its own subagent (recommended for the referee, where
+independence is a correctness feature); otherwise it runs inline — same result.
 
 - `map-method` — Tier-1 skeleton (generated index + system_map) via grep/glob,
   language-agnostic, read-only.
@@ -202,9 +203,10 @@ is a correctness feature); otherwise it runs inline — same result.
 ## Portability
 
 The `skills/` core is [Agent Skills](https://agentskills.io) — portable to any
-harness that reads the format (Claude Code, Codex, and ~40 others). Only the
-`SKILL.md` files and their bundled methods travel; the manifests
-(`.claude-plugin/`, `.codex-plugin/`) and marketplace catalogs are per-harness
-adapters. Subagent dispatch is an optional acceleration where the harness has it,
-never a requirement — the skills are self-sufficient inline. So "works on any AI"
-means, honestly, "works on any Agent Skills harness".
+harness that reads the format. Each skill carries its own required references or
+scripts, so per-skill installers do not lose shared resources. Claude Code and
+Codex use native manifests and marketplace catalogs; Gemini CLI and other hosts
+can install the same core through an Agent Skills installer. Subagent dispatch is
+an optional acceleration where the harness has it, never a requirement — the
+skills are self-sufficient inline. So "works on any AI" means, honestly, "works
+on any Agent Skills harness".
